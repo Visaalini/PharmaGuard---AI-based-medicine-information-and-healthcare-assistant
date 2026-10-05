@@ -1,0 +1,589 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    :root {
+        --primary: #5b5bff;
+        --primary-dark: #4a4ae8;
+        --primary-light: #7070ff;
+        --secondary: #00d4aa;
+        --text-primary: #0f0f23;
+        --text-secondary: #6c757d;
+        --border: #e9ecef;
+        --success: #51cf66;
+        --danger: #ff6b6b;
+        --warning: #ffd700;
+    }
+
+    .diagnostic-page {
+        padding: 40px 0;
+        background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+    }
+
+    .diagnostic-header {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+
+    .diagnostic-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+    }
+
+    .diagnostic-header p {
+        font-size: 1rem;
+        color: var(--text-secondary);
+    }
+
+    .test-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+
+    .test-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 2px solid var(--border);
+        transition: all 0.3s ease;
+    }
+
+    .test-card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        border-color: var(--primary);
+    }
+
+    .test-card h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .test-status {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        font-size: 0.8rem;
+        margin-left: auto;
+    }
+
+    .status-success {
+        background: var(--success);
+        color: white;
+    }
+
+    .status-failure {
+        background: var(--danger);
+        color: white;
+    }
+
+    .status-unknown {
+        background: var(--warning);
+        color: var(--text-primary);
+    }
+
+    .test-result {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-top: 12px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .test-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+
+    .btn-test {
+        padding: 8px 14px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-test:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+    }
+
+    .btn-test:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .console-section {
+        background: #1e1e1e;
+        color: #00ff00;
+        border-radius: 12px;
+        padding: 20px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        line-height: 1.6;
+        overflow-x: auto;
+        max-height: 400px;
+        overflow-y: auto;
+        margin-top: 40px;
+    }
+
+    .console-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #888;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .console-line {
+        margin-bottom: 4px;
+    }
+
+    .console-log {
+        color: #00ff00;
+    }
+
+    .console-error {
+        color: #ff6b6b;
+    }
+
+    .console-warn {
+        color: #ffd700;
+    }
+
+    .console-info {
+        color: #00a8ff;
+    }
+
+    .live-preview {
+        margin-top: 40px;
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .live-preview h2 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+    }
+
+    #preview-video {
+        width: 100%;
+        max-width: 600px;
+        background: #000;
+        border-radius: 8px;
+    }
+
+    .preview-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+        .test-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .diagnostic-header h1 {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+<div class="diagnostic-page">
+    <div class="container">
+        <div class="diagnostic-header">
+            <h1>📹 Camera System Diagnostics</h1>
+            <p>Test your camera setup and diagnose any issues</p>
+        </div>
+
+        <div class="test-grid">
+            <!-- Browser Support Test -->
+            <div class="test-card">
+                <h3>
+                    Browser Support
+                    <span class="test-status" id="status-browser"></span>
+                </h3>
+                <div class="test-result" id="result-browser">
+                    Checking...
+                </div>
+                <div class="test-actions">
+                    <button class="btn-test" onclick="runTests.browserSupport()">Run Test</button>
+                </div>
+            </div>
+
+            <!-- HTTPS Test -->
+            <div class="test-card">
+                <h3>
+                    HTTPS/Security
+                    <span class="test-status" id="status-https"></span>
+                </h3>
+                <div class="test-result" id="result-https">
+                    Checking...
+                </div>
+                <div class="test-actions">
+                    <button class="btn-test" onclick="runTests.httpsCheck()">Run Test</button>
+                </div>
+            </div>
+
+            <!-- Permissions Test -->
+            <div class="test-card">
+                <h3>
+                    Camera Permissions
+                    <span class="test-status" id="status-permissions"></span>
+                </h3>
+                <div class="test-result" id="result-permissions">
+                    Checking...
+                </div>
+                <div class="test-actions">
+                    <button class="btn-test" onclick="runTests.checkPermissions()">Check Permission</button>
+                </div>
+            </div>
+
+            <!-- Camera Enumeration Test -->
+            <div class="test-card">
+                <h3>
+                    Available Devices
+                    <span class="test-status" id="status-devices"></span>
+                </h3>
+                <div class="test-result" id="result-devices">
+                    Checking...
+                </div>
+                <div class="test-actions">
+                    <button class="btn-test" onclick="runTests.enumerateDevices()">Scan Devices</button>
+                </div>
+            </div>
+
+            <!-- Camera Access Test -->
+            <div class="test-card">
+                <h3>
+                    Camera Access
+                    <span class="test-status" id="status-access"></span>
+                </h3>
+                <div class="test-result" id="result-access">
+                    Checking...
+                </div>
+                <div class="test-actions">
+                    <button class="btn-test" id="btn-access" onclick="runTests.testCameraAccess()">Request Camera</button>
+                </div>
+            </div>
+
+            <!-- Canvas Test -->
+            <div class="test-card">
+                <h3>
+                    Canvas Drawing
+                    <span class="test-status" id="status-canvas"></span>
+                </h3>
+                <div class="test-result" id="result-canvas">
+                    Checking...
+                </div>
+                <div class="test-actions">
+                    <button class="btn-test" onclick="runTests.canvasTest()">Run Test</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Preview Section -->
+        <div class="live-preview" id="live-preview-section" style="display: none;">
+            <h2>Live Camera Preview</h2>
+            <video id="preview-video" autoplay playsinline></video>
+            <div class="preview-controls">
+                <button class="btn-test" onclick="runTests.stopPreview()">Stop Preview</button>
+                <button class="btn-test" onclick="runTests.captureFromPreview()">Capture Test</button>
+            </div>
+        </div>
+
+        <!-- Console Output -->
+        <div class="console-section">
+            <div class="console-title">Diagnostic Console</div>
+            <div id="console-output">
+                <div class="console-line console-info">> System ready. Run tests to begin...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/camera-handler.js') }}"></script>
+<script>
+    const consoleOutput = document.getElementById('console-output');
+    let cameraStream = null;
+
+    // Override console to capture output
+    const originalConsole = {
+        log: console.log,
+        error: console.error,
+        warn: console.warn,
+        info: console.info
+    };
+
+    function logToConsole(message, type = 'log') {
+        const line = document.createElement('div');
+        line.className = `console-line console-${type}`;
+        line.textContent = `> ${message}`;
+        consoleOutput.appendChild(line);
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    console.log = function(...args) {
+        logToConsole(args.join(' '), 'log');
+        originalConsole.log(...args);
+    };
+
+    console.error = function(...args) {
+        logToConsole(args.join(' '), 'error');
+        originalConsole.error(...args);
+    };
+
+    console.warn = function(...args) {
+        logToConsole(args.join(' '), 'warn');
+        originalConsole.warn(...args);
+    };
+
+    console.info = function(...args) {
+        logToConsole(args.join(' '), 'info');
+        originalConsole.info(...args);
+    };
+
+    const runTests = {
+        setStatus(testName, status, result) {
+            const statusEl = document.getElementById(`status-${testName}`);
+            const resultEl = document.getElementById(`result-${testName}`);
+
+            if (statusEl) {
+                statusEl.className = 'test-status';
+                statusEl.textContent = status === 'success' ? '✓' : status === 'failure' ? '✕' : '?';
+                statusEl.classList.add(`status-${status}`);
+            }
+
+            if (resultEl) {
+                resultEl.innerHTML = result;
+            }
+        },
+
+        browserSupport() {
+            console.log('Testing browser support...');
+            const support = window.cameraHandler?.isSupported || {};
+            const browser = window.cameraHandler?.getBrowserName?.() || 'Unknown';
+
+            const hasSupport = support.isSupported ? 'success' : 'failure';
+            const result = `
+                <strong>Browser:</strong> ${browser}<br>
+                <strong>Support:</strong> ${support.isSupported ? 'Yes ✓' : 'No ✕'}<br>
+                <strong>getUserMedia:</strong> ${support.getUserMedia ? 'Yes' : 'No'}
+            `;
+
+            this.setStatus('browser', hasSupport, result);
+            console.log('Browser support:', support);
+        },
+
+        httpsCheck() {
+            console.log('Testing HTTPS requirement...');
+            const isHTTPS = window.location.protocol === 'https:';
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const isSafe = isHTTPS || isLocalhost;
+
+            const status = isSafe ? 'success' : 'failure';
+            const result = `
+                <strong>Protocol:</strong> ${window.location.protocol}<br>
+                <strong>Hostname:</strong> ${window.location.hostname}<br>
+                <strong>Status:</strong> ${isSafe ? 'Secure ✓' : 'Not Secure ✕'}
+            `;
+
+            this.setStatus('https', status, result);
+            console.log('HTTPS check:', { isHTTPS, isLocalhost, isSafe });
+        },
+
+        async checkPermissions() {
+            console.log('Checking camera permissions...');
+            try {
+                const permission = await navigator.permissions.query({ name: 'camera' });
+                const status = permission.state === 'granted' ? 'success' : permission.state === 'denied' ? 'failure' : 'unknown';
+
+                const result = `
+                    <strong>State:</strong> ${permission.state}<br>
+                    <strong>Status:</strong> ${permission.state === 'granted' ? 'Allowed ✓' : permission.state === 'denied' ? 'Blocked ✕' : 'Not determined'}
+                `;
+
+                this.setStatus('permissions', status, result);
+                console.log('Permission state:', permission.state);
+            } catch (err) {
+                const result = '<strong>Error:</strong> Permissions API not available';
+                this.setStatus('permissions', 'unknown', result);
+                console.warn('Permissions API not available:', err.message);
+            }
+        },
+
+        async enumerateDevices() {
+            console.log('Enumerating media devices...');
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const cameras = devices.filter(d => d.kind === 'videoinput');
+
+                const status = cameras.length > 0 ? 'success' : 'failure';
+                const deviceList = cameras.map(c => `• ${c.label || 'Camera ' + (cameras.indexOf(c) + 1)}`).join('<br>');
+
+                const result = `
+                    <strong>Found:</strong> ${cameras.length} camera(s)<br>
+                    ${deviceList}
+                `;
+
+                this.setStatus('devices', status, result);
+                console.log('Cameras found:', cameras);
+            } catch (err) {
+                const result = `<strong>Error:</strong> ${err.message}`;
+                this.setStatus('devices', 'failure', result);
+                console.error('Device enumeration error:', err);
+            }
+        },
+
+        async testCameraAccess() {
+            console.log('Testing camera access...');
+            const btn = document.getElementById('btn-access');
+            btn.disabled = true;
+
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+
+                document.getElementById('live-preview-section').style.display = 'block';
+                const video = document.getElementById('preview-video');
+                video.srcObject = cameraStream;
+
+                const result = `
+                    <strong>Status:</strong> Camera Access Granted ✓<br>
+                    <strong>Stream:</strong> Active<br>
+                    <strong>Tracks:</strong> ${cameraStream.getTracks().length}
+                `;
+
+                this.setStatus('access', 'success', result);
+                console.log('Camera access granted:', cameraStream);
+            } catch (err) {
+                let result = `<strong>Error:</strong> ${err.name}<br>`;
+
+                if (err.name === 'NotAllowedError') {
+                    result += '<strong>Reason:</strong> Permission denied by user';
+                } else if (err.name === 'NotFoundError') {
+                    result += '<strong>Reason:</strong> No camera device found';
+                } else if (err.name === 'NotReadableError') {
+                    result += '<strong>Reason:</strong> Camera is in use by another application';
+                } else {
+                    result += `<strong>Reason:</strong> ${err.message}`;
+                }
+
+                this.setStatus('access', 'failure', result);
+                console.error('Camera access error:', err.name, err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        },
+
+        canvasTest() {
+            console.log('Testing canvas capabilities...');
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                if (!ctx) {
+                    throw new Error('Could not get 2D context');
+                }
+
+                canvas.width = 100;
+                canvas.height = 100;
+                ctx.fillStyle = '#5b5bff';
+                ctx.fillRect(0, 0, 100, 100);
+
+                const canConvertToBlob = !!canvas.toBlob;
+                const canConvertToDataURL = !!canvas.toDataURL;
+
+                const result = `
+                    <strong>Canvas:</strong> Supported ✓<br>
+                    <strong>2D Context:</strong> Available<br>
+                    <strong>toBlob:</strong> ${canConvertToBlob ? 'Yes' : 'No'}<br>
+                    <strong>toDataURL:</strong> ${canConvertToDataURL ? 'Yes' : 'No'}
+                `;
+
+                this.setStatus('canvas', 'success', result);
+                console.log('Canvas test passed');
+            } catch (err) {
+                const result = `<strong>Error:</strong> ${err.message}`;
+                this.setStatus('canvas', 'failure', result);
+                console.error('Canvas test failed:', err);
+            }
+        },
+
+        stopPreview() {
+            console.log('Stopping camera preview...');
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            document.getElementById('live-preview-section').style.display = 'none';
+            console.log('Preview stopped');
+        },
+
+        captureFromPreview() {
+            console.log('Capturing image from preview...');
+            const video = document.getElementById('preview-video');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            canvas.toBlob(blob => {
+                const size = (blob.size / 1024).toFixed(2);
+                console.log(`Image captured: ${canvas.width}x${canvas.height}px, ${size}KB`);
+                alert(`✓ Image captured successfully!\n\nResolution: ${canvas.width}x${canvas.height}px\nSize: ${size}KB`);
+            }, 'image/jpeg', 0.95);
+        }
+    };
+
+    // Run initial tests
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('PharmaGuard Camera Diagnostics Started');
+        console.log('Running automatic tests...');
+        setTimeout(() => {
+            runTests.browserSupport();
+            runTests.httpsCheck();
+            runTests.checkPermissions();
+            runTests.enumerateDevices();
+            runTests.canvasTest();
+        }, 500);
+    });
+
+    // Cleanup on unload
+    window.addEventListener('beforeunload', () => {
+        runTests.stopPreview();
+    });
+</script>
+
+{% endblock %}

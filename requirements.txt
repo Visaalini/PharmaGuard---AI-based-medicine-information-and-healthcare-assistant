@@ -1,0 +1,16 @@
+Flask
+werkzeug
+flask-login
+opencv-python
+numpy
+pillow
+pytesseract
+tensorflow
+fpdf
+pyzbar
+python-dotenv
+rapidfuzz
+openpyxl
+pandas
+easyocr
+requests

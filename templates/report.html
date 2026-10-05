@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    .report-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 60px 0;
+    }
+    
+    .report-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+    
+    .report-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        text-align: center;
+        position: relative;
+    }
+    
+    .report-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .report-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin-bottom: 0;
+    }
+    
+    .report-badge {
+        display: inline-block;
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-top: 20px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    .report-badge.real {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+    }
+    
+    .report-badge.fake {
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        color: white;
+    }
+    
+    .report-body {
+        padding: 40px;
+    }
+    
+    .info-section {
+        margin-bottom: 35px;
+    }
+    
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 3px solid #667eea;
+    }
+    
+    .section-title i {
+        color: #667eea;
+        font-size: 1.6rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+    
+    .info-box {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 25px;
+        border-radius: 15px;
+        border-left: 5px solid #667eea;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .info-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    
+    .info-label {
+        font-size: 0.9rem;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .info-value {
+        font-size: 1.3rem;
+        color: #2d3748;
+        font-weight: 700;
+    }
+    
+    .confidence-bar {
+        background: #e2e8f0;
+        height: 30px;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-top: 10px;
+        position: relative;
+    }
+    
+    .confidence-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        transition: width 1s ease;
+    }
+    
+    .text-box {
+        background: #2d3748;
+        color: #e2e8f0;
+        padding: 25px;
+        border-radius: 15px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.95rem;
+        line-height: 1.8;
+        max-height: 300px;
+        overflow-y: auto;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+    }
+    
+    .warning-box {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-top: 30px;
+    }
+    
+    .warning-box h4 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .warning-box ul {
+        margin: 0;
+        padding-left: 25px;
+    }
+    
+    .warning-box li {
+        margin-bottom: 8px;
+        font-size: 1.05rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 40px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-action {
+        padding: 15px 35px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 50px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .btn-download {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+    }
+    
+    .btn-download:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        color: white;
+    }
+    
+    .btn-scan {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+    }
+    
+    .btn-scan:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);
+        color: white;
+    }
+    
+    .btn-home {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        color: #2d3748;
+        box-shadow: 0 4px 15px rgba(168, 237, 234, 0.4);
+    }
+    
+    .btn-home:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(168, 237, 234, 0.6);
+        color: #2d3748;
+    }
+</style>
+
+<section class="report-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+
+                <div class="report-card">
+                    <!-- Report Header -->
+                    <div class="report-header">
+                        <h1><i class="fas fa-file-medical"></i> Medicine Analysis Report</h1>
+                        <p>Comprehensive Detection & Verification Results</p>
+                        <div class="report-badge {% if result == 'Fake' %}fake{% else %}real{% endif %}">
+                            {% if result == "Fake" %}
+                                <i class="fas fa-triangle-exclamation"></i> COUNTERFEIT DETECTED
+                            {% else %}
+                                <i class="fas fa-shield-check"></i> AUTHENTIC VERIFIED
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Report Body -->
+                    <div class="report-body">
+                        
+                        <!-- Medicine Information Section -->
+                        <div class="info-section">
+                            <div class="section-title">
+                                <i class="fas fa-capsules"></i>
+                                <span>Medicine Information</span>
+                            </div>
+                            <div class="info-grid">
+                                <div class="info-box">
+                                    <div class="info-label">Medicine Name</div>
+                                    <div class="info-value">{{ info.medicine_name }}</div>
+                                </div>
+                                <div class="info-box">
+                                    <div class="info-label">Expiry Date</div>
+                                    <div class="info-value">{{ info.expiry_date }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Results Section -->
+                        <div class="info-section">
+                            <div class="section-title">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Detection Results</span>
+                            </div>
+                            <div class="info-grid">
+                                <div class="info-box" style="border-left-color: {% if result == 'Fake' %}#f45c43{% else %}#38ef7d{% endif %};">
+                                    <div class="info-label">Authentication Status</div>
+                                    <div class="info-value" style="color: {% if result == 'Fake' %}#f45c43{% else %}#38ef7d{% endif %};">
+                                        {{ result|upper }}
+                                    </div>
+                                </div>
+                                <div class="info-box" style="border-left-color: #667eea;">
+                                    <div class="info-label">AI Confidence Score</div>
+                                    <div class="info-value">{{ "%.2f%%"|format(confidence) if confidence is not none and confidence != 'N/A' else 'N/A' }}</div>
+                                    {% if confidence is not none and confidence != 'N/A' %}
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill" style="width: {{ confidence }}%;">
+                                            {{ "%.2f"|format(confidence) }}%
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Extracted Text Section -->
+                        {% if text %}
+                        <div class="info-section">
+                            <div class="section-title">
+                                <i class="fas fa-file-text"></i>
+                                <span>OCR Extracted Text</span>
+                            </div>
+                            <div class="text-box">{{ text }}</div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Warning Section -->
+                        {% if result == "Fake" %}
+                        <div class="warning-box">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Critical Safety Warning</h4>
+                            <ul>
+                                <li><strong>DO NOT CONSUME</strong> this medicine under any circumstances</li>
+                                <li>Report immediately to local health authorities and drug control officials</li>
+                                <li>Contact the manufacturer directly for authentication verification</li>
+                                <li>Preserve the product and packaging as evidence</li>
+                                <li>Only purchase medicines from licensed, authorized pharmacies and retailers</li>
+                                <li>Share this report with relevant authorities</li>
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <a href="/download_report" class="btn-action btn-download">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>Download PDF Report</span>
+                            </a>
+                            <a href="/detection" class="btn-action btn-scan">
+                                <i class="fas fa-redo"></i>
+                                <span>Scan Another Medicine</span>
+                            </a>
+                            <a href="/" class="btn-action btn-home">
+                                <i class="fas fa-home"></i>
+                                <span>Back to Home</span>
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}

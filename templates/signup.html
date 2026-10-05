@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="auth-section">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-6 col-lg-5">
+
+                <div class="auth-card shadow-lg rounded-4 p-4 p-md-5 bg-white">
+
+                    <div class="text-center mb-4">
+                        <div class="auth-logo mb-3">
+                            <i class="fas fa-shield-halved fa-3x text-primary"></i>
+                        </div>
+                        <h2 class="fw-bold">Create Account</h2>
+                        <p class="text-muted small">Join PharmaGuard to start verifying medicines</p>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('signup') }}">
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-semibold">Full Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-user text-muted"></i>
+                                </span>
+                                <input type="text" class="form-control border-start-0 ps-0"
+                                       id="name" name="name" placeholder="John Doe"
+                                       value="{{ request.form.get('name', '') }}" required autofocus>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-semibold">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-envelope text-muted"></i>
+                                </span>
+                                <input type="email" class="form-control border-start-0 ps-0"
+                                       id="email" name="email" placeholder="you@example.com"
+                                       value="{{ request.form.get('email', '') }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label fw-semibold">Phone Number <span class="text-muted small fw-normal">(for SMS alerts)</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-phone text-muted"></i>
+                                </span>
+                                <input type="tel" class="form-control border-start-0 ps-0"
+                                       id="phone" name="phone" placeholder="+919876543210"
+                                       value="{{ request.form.get('phone', '') }}">
+                            </div>
+                            <div class="form-text text-muted">Include country code (e.g. +91 for India). Used to send you SMS if a fake medicine is detected.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label fw-semibold">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-lock text-muted"></i>
+                                </span>
+                                <input type="password" class="form-control border-start-0 ps-0"
+                                       id="password" name="password" placeholder="Min. 6 characters" required>
+                                <button type="button" class="btn btn-outline-secondary border-start-0"
+                                        onclick="togglePassword('password', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength mt-1" id="strength-bar"></div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="password2" class="form-label fw-semibold">Confirm Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-lock text-muted"></i>
+                                </span>
+                                <input type="password" class="form-control border-start-0 ps-0"
+                                       id="password2" name="password2" placeholder="Repeat password" required>
+                                <button type="button" class="btn btn-outline-secondary border-start-0"
+                                        onclick="togglePassword('password2', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="small text-danger mt-1 d-none" id="match-error">Passwords do not match.</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" id="submit-btn">
+                            <i class="fas fa-user-plus me-2"></i>Create Account
+                        </button>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <p class="text-center text-muted small mb-0">
+                        Already have an account?
+                        <a href="{{ url_for('login') }}" class="fw-semibold text-primary text-decoration-none">
+                            Log In
+                        </a>
+                    </p>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+function togglePassword(id, btn) {
+    const input = document.getElementById(id);
+    const icon  = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+
+// Live password match check
+const pw1 = document.getElementById('password');
+const pw2 = document.getElementById('password2');
+const matchError = document.getElementById('match-error');
+const submitBtn  = document.getElementById('submit-btn');
+
+function checkMatch() {
+    if (pw2.value && pw1.value !== pw2.value) {
+        matchError.classList.remove('d-none');
+        submitBtn.disabled = true;
+    } else {
+        matchError.classList.add('d-none');
+        submitBtn.disabled = false;
+    }
+}
+pw1.addEventListener('input', checkMatch);
+pw2.addEventListener('input', checkMatch);
+</script>
+
+{% endblock %}

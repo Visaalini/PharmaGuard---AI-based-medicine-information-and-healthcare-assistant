@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1>Contact <span class="text-gradient">Us</span></h1>
+                <p>Have questions or feedback? We'd love to hear from you.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+
+            <!-- Contact Form -->
+            <div class="col-lg-7">
+                <div class="card shadow-sm rounded-4">
+                    <div class="card-header bg-primary text-white rounded-top-4">
+                        <h5 class="mb-0"><i class="fas fa-paper-plane me-2"></i>Send a Message</h5>
+                    </div>
+                    <div class="card-body p-4">
+
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endwith %}
+
+                        <form method="POST" action="{{ url_for('contact') }}" novalidate>
+                            <div class="mb-3">
+                                <label for="name" class="form-label fw-semibold">Full Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-user text-muted"></i></span>
+                                    <input type="text" class="form-control" id="name" name="name"
+                                           placeholder="John Doe"
+                                           value="{{ request.form.get('name', '') }}" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label fw-semibold">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-envelope text-muted"></i></span>
+                                    <input type="email" class="form-control" id="email" name="email"
+                                           placeholder="you@example.com"
+                                           value="{{ request.form.get('email', '') }}" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="subject" class="form-label fw-semibold">Subject</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-tag text-muted"></i></span>
+                                    <input type="text" class="form-control" id="subject" name="subject"
+                                           placeholder="How can we help?"
+                                           value="{{ request.form.get('subject', '') }}" required>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="message" class="form-label fw-semibold">Message</label>
+                                <textarea class="form-control" id="message" name="message"
+                                          rows="5" placeholder="Write your message here..." required>{{ request.form.get('message', '') }}</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                                <i class="fas fa-paper-plane me-2"></i>Send Message
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Info -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm rounded-4 mb-3">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Contact Information</h5>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-3 d-flex align-items-start gap-2">
+                                <i class="fas fa-envelope text-primary mt-1"></i>
+                                <span>support@pharmaguard.com</span>
+                            </li>
+                            <li class="mb-3 d-flex align-items-start gap-2">
+                                <i class="fas fa-phone text-primary mt-1"></i>
+                                <span>+1 (555) 123-4567</span>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="fas fa-map-marker-alt text-primary mt-1"></i>
+                                <span>123 Health Street,<br>Medical City, HC 10001</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3"><i class="fas fa-clock text-primary me-2"></i>Support Hours</h5>
+                        <ul class="list-unstyled mb-0 small">
+                            <li class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Mon – Fri</span>
+                                <span class="fw-semibold">9:00 AM – 6:00 PM</span>
+                            </li>
+                            <li class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Saturday</span>
+                                <span class="fw-semibold">10:00 AM – 4:00 PM</span>
+                            </li>
+                            <li class="d-flex justify-content-between">
+                                <span class="text-muted">Sunday</span>
+                                <span class="text-danger fw-semibold">Closed</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}

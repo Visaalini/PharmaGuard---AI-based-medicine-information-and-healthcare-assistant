@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1>Medicine <span class="text-gradient">Authenticity Detection</span></h1>
+                <p>Upload or capture an image of your medicine packaging to verify its authenticity using our advanced AI system.</p>
+            </div>
+            <div class="col-lg-5">
+                <div class="header-stats">
+                    <div class="stat-box">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <span class="stat-value">99.5%</span>
+                            <span class="stat-label">Accuracy</span>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <span class="stat-value">&lt;3s</span>
+                            <span class="stat-label">Analysis Time</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="detection-section">
+    <div class="container">
+        {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" title="Close alert" aria-label="Close alert"></button>
+        </div>
+        {% endif %}
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="upload-card">
+                    <div class="upload-header">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h3>Upload Medicine Image</h3>
+                        <p>Choose your preferred method to upload the medicine packaging</p>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" action="/detect" id="upload-form">
+                        <div class="upload-area" id="upload-area">
+                            <div class="upload-placeholder" id="upload-placeholder">
+                                <div class="upload-icon-lg">
+                                    <i class="fas fa-images"></i>
+                                </div>
+                                <h4>Drag & drop your image here</h4>
+                                <p>or</p>
+                                <label for="image" class="btn btn-upload">
+                                    <i class="fas fa-folder-open me-2"></i>Browse Files
+                                </label>
+                                <input type="file" name="image" id="image" accept="image/*" hidden>
+                                <span class="upload-hint">Supports: JPG, PNG, WEBP (Max 10MB)</span>
+                            </div>
+                            <div class="preview-container is-hidden" id="preview-container">
+                                <img id="image-preview" src="" alt="Preview">
+                                <div class="preview-overlay">
+                                    <button type="button" class="btn btn-remove" id="btn-remove" title="Remove selected image" aria-label="Remove selected image">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-change" id="btn-change" title="Choose a different image" aria-label="Choose a different image">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="upload-methods">
+                            <button type="button" class="method-btn" id="camera-btn">
+                                <i class="fas fa-camera"></i>
+                                <span>Use Camera</span>
+                            </button>
+                            <button type="button" class="method-btn" id="gallery-btn">
+                                <i class="fas fa-photo-film"></i>
+                                <span>Choose from Gallery</span>
+                            </button>
+                        </div>
+
+                        <div class="camera-section is-hidden" id="camera-section">
+                            <div class="camera-wrapper">
+                                <video id="video" autoplay></video>
+                                <canvas id="canvas" class="is-hidden"></canvas>
+                            </div>
+                            <div class="camera-controls">
+                                <button type="button" class="btn btn-capture" id="capture-btn">
+                                    <i class="fas fa-camera"></i> Capture
+                                </button>
+                                <button type="button" class="btn btn-cancel" id="cancel-camera">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="upload-actions">
+                            <button type="submit" class="btn btn-analyze" id="btn-analyze" disabled>
+                                <i class="fas fa-search me-2" id="btn-icon"></i><span id="btn-text">Analyze Medicine</span>
+                            </button>
+
+                            <div id="loading-overlay" class="is-hidden" style="margin-top: 1.5rem; text-align: center;">
+                                <div class="d-flex flex-column align-items-center gap-3 py-3 px-4 rounded-3" style="background: var(--bg-light); border: 1px solid var(--border);">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="spinner-border text-primary" role="status" style="width: 1.5rem; height: 1.5rem;">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <span style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">Analyzing medicine... please wait</span>
+                                    </div>
+                                    <div class="progress w-100" style="height: 6px; border-radius: 10px;">
+                                        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%; background: var(--primary); border-radius: 10px;"></div>
+                                    </div>
+                                    <span id="loading-hint" style="font-size: 0.8rem; color: var(--text-secondary);">This may take a moment for the first scan (models loading)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="tips-card">
+                    <h4><i class="fas fa-lightbulb me-2"></i>Tips for Best Results</h4>
+
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-sun"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h6>Good Lighting</h6>
+                            <p>Use natural or bright lighting to avoid shadows and reflections</p>
+                        </div>
+                    </div>
+
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-expand"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h6>Full Packaging Visible</h6>
+                            <p>Include both front and back of the medicine package if possible</p>
+                        </div>
+                    </div>
+
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h6>Clear & Sharp Images</h6>
+                            <p>Avoid blurry photos. Hold the phone steady and focus on the text</p>
+                        </div>
+                    </div>
+
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h6>Expiry Date Visible</h6>
+                            <p>Make sure the expiry/manufacturing date is clearly visible and readable</p>
+                        </div>
+                    </div>
+
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h6>Text Readability</h6>
+                            <p>Text should be readable to the naked eye in your photo</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="security-card">
+                    <div class="security-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="security-content">
+                        <h6>Your Privacy is Protected</h6>
+                        <p>Images are analyzed securely and not stored permanently on our servers.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('image');
+    const uploadArea = document.getElementById('upload-area');
+    const uploadPlaceholder = document.getElementById('upload-placeholder');
+    const previewContainer = document.getElementById('preview-container');
+    const imagePreview = document.getElementById('image-preview');
+    const btnAnalyze = document.getElementById('btn-analyze');
+    const btnIcon = document.getElementById('btn-icon');
+    const btnText = document.getElementById('btn-text');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const progressBar = document.getElementById('progress-bar');
+    const btnRemove = document.getElementById('btn-remove');
+    const btnChange = document.getElementById('btn-change');
+    const cameraBtn = document.getElementById('camera-btn');
+    const galleryBtn = document.getElementById('gallery-btn');
+    const cameraSection = document.getElementById('camera-section');
+    const captureBtn = document.getElementById('capture-btn');
+    const cancelCamera = document.getElementById('cancel-camera');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const uploadForm = document.getElementById('upload-form');
+    const uploadTitle = uploadPlaceholder.querySelector('h4');
+
+    let stream = null;
+    let selectedFile = null;
+    let isSubmitting = false;
+
+    function hideElement(element) {
+        element.classList.add('is-hidden');
+    }
+
+    function showElement(element) {
+        element.classList.remove('is-hidden');
+    }
+
+    function isVisible(element) {
+        return !element.classList.contains('is-hidden');
+    }
+
+    function stopCameraStream() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+    }
+
+    function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imagePreview.src = e.target.result;
+            hideElement(cameraSection);
+            hideElement(uploadPlaceholder);
+            showElement(previewContainer);
+            btnAnalyze.disabled = false;
+            selectedFile = file;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function setImageFile(file) {
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Please select a valid image file.');
+            return false;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            alert('Image is too large. Please choose an image under 10MB.');
+            return false;
+        }
+
+        showPreview(file);
+        return true;
+    }
+
+    function resetUploadState() {
+        imageInput.value = '';
+        imagePreview.src = '';
+        hideElement(previewContainer);
+        showElement(uploadPlaceholder);
+        hideElement(cameraSection);
+        btnAnalyze.disabled = true;
+        selectedFile = null;
+        stopCameraStream();
+    }
+
+    function showLoadingState() {
+        if (isSubmitting) return;
+        isSubmitting = true;
+
+        btnAnalyze.disabled = true;
+        btnIcon.className = 'fas fa-spinner fa-spin me-2';
+        btnText.textContent = 'Analyzing...';
+        showElement(loadingOverlay);
+
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 85) progress = 85;
+            progressBar.style.width = progress + '%';
+        }, 300);
+
+        loadingOverlay._interval = interval;
+    }
+
+    function hideLoadingState() {
+        isSubmitting = false;
+        if (loadingOverlay._interval) {
+            clearInterval(loadingOverlay._interval);
+        }
+        progressBar.style.width = '0%';
+        hideElement(loadingOverlay);
+        btnIcon.className = 'fas fa-search me-2';
+        btnText.textContent = 'Analyze Medicine';
+    }
+
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+    if (isTouchDevice && uploadTitle) {
+        uploadTitle.textContent = 'Tap to upload your image';
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.classList.add('drag-over');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.classList.remove('drag-over');
+        });
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        const droppedFile = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
+        if (droppedFile) {
+            setImageFile(droppedFile);
+        }
+    });
+
+    uploadArea.addEventListener('click', function(e) {
+        const interactive = e.target.closest('button, label, input');
+        if (!interactive && isVisible(uploadPlaceholder)) {
+            imageInput.click();
+        }
+    });
+
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            selectedFile = file;
+            showPreview(file);
+        }
+    });
+
+    btnRemove.addEventListener('click', function() {
+        resetUploadState();
+    });
+
+    btnChange.addEventListener('click', function() {
+        imageInput.click();
+    });
+
+    galleryBtn.addEventListener('click', function() {
+        imageInput.click();
+    });
+
+    cameraBtn.addEventListener('click', async function() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.srcObject = stream;
+            showElement(cameraSection);
+            hideElement(uploadPlaceholder);
+            hideElement(previewContainer);
+        } catch (err) {
+            alert('Unable to access camera. Please check permissions.');
+        }
+    });
+
+    captureBtn.addEventListener('click', function() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+
+        canvas.toBlob(function(blob) {
+            const file = new File([blob], 'captured_image.jpg', { type: 'image/jpeg' });
+            if (setImageFile(file)) {
+                stopCameraStream();
+            } else {
+                alert('Captured image could not be processed. Please try again.');
+            }
+        }, 'image/jpeg');
+    });
+
+    cancelCamera.addEventListener('click', function() {
+        stopCameraStream();
+        hideElement(cameraSection);
+        showElement(uploadPlaceholder);
+    });
+
+    uploadForm.addEventListener('submit', function(e) {
+        if (!selectedFile && !imageInput.files.length) {
+            e.preventDefault();
+            alert('Please select an image first.');
+            return false;
+        }
+
+        if (isSubmitting) {
+            e.preventDefault();
+            return false;
+        }
+
+        if (selectedFile && !imageInput.files.length) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+
+            showLoadingState();
+
+            fetch('/detect', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.documentElement.innerHTML = html;
+                window.scrollTo(0, 0);
+            })
+            .catch(error => {
+                hideLoadingState();
+                alert('Error uploading image. Please try again.');
+                console.error(error);
+            });
+            return false;
+        }
+
+        stopCameraStream();
+        showLoadingState();
+    });
+
+    window.addEventListener('beforeunload', function() {
+        stopCameraStream();
+    });
+});
+</script>
+
+{% endblock %}

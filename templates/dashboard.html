@@ -1,0 +1,1027 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+
+<section class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1>Analytics <span class="text-gradient">Dashboard</span></h1>
+                <p>Monitor your medicine verification activity and insights.</p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <div class="btn-group" role="group">
+                    <a href="/detection" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Scan
+                    </a>
+                    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-download me-2"></i>Extract
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="exportCSV(event)">
+                            <i class="fas fa-file-csv me-2"></i>Export as CSV
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportJSON(event)">
+                            <i class="fas fa-code me-2"></i>Export as JSON
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#extractModal">
+                            <i class="fas fa-filter me-2"></i>Advanced Extract
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="container">
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="stat-card stat-success">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Real Medicines</span>
+                        <span class="stat-value">{{ real_count }}</span>
+                    </div>
+                    <div class="stat-trend up">
+                        <i class="fas fa-arrow-up"></i> Verified
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card stat-danger">
+                    <div class="stat-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Fake Medicines</span>
+                        <span class="stat-value">{{ fake_count }}</span>
+                    </div>
+                    <div class="stat-trend down">
+                        <i class="fas fa-exclamation"></i> Detected
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card stat-primary">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Scans</span>
+                        <span class="stat-value">{{ total_scans }}</span>
+                    </div>
+                    <div class="stat-trend">
+                        <i class="fas fa-clock"></i> Completed
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Period Stats -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="period-stat">
+                    <div class="period-header">This Week</div>
+                    <div class="period-numbers">
+                        <div class="period-real">{{ week_real }} <span>Real</span></div>
+                        <div class="period-fake">{{ week_fake }} <span>Fake</span></div>
+                        <div class="period-total">{{ week_total }} Total</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="period-stat">
+                    <div class="period-header">This Month</div>
+                    <div class="period-numbers">
+                        <div class="period-real">{{ month_real }} <span>Real</span></div>
+                        <div class="period-fake">{{ month_fake }} <span>Fake</span></div>
+                        <div class="period-total">{{ month_total }} Total</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="period-stat">
+                    <div class="period-header">This Year</div>
+                    <div class="period-numbers">
+                        <div class="period-real">{{ year_real }} <span>Real</span></div>
+                        <div class="period-fake">{{ year_fake }} <span>Fake</span></div>
+                        <div class="period-total">{{ year_total }} Total</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row - Detection Trends (Left) & Distribution (Right) -->
+        <div class="row g-4 mb-5">
+            <!-- Detection Trend Line Chart (Left) -->
+            <div class="col-lg-8">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-line me-2"></i>Detection Trends</h3>
+                        <div class="chart-actions">
+                            <div class="action-group">
+                                <label class="action-label">Period:</label>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="updateLineChart('week')">Week</button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="updateLineChart('month')">Month</button>
+                                <button class="btn btn-sm btn-primary" onclick="updateLineChart('year')">Year</button>
+                            </div>
+                            <div class="action-group ms-3">
+                                <label class="action-label">Lines:</label>
+                                <button class="btn btn-sm btn-outline-success active-line" data-line="real" onclick="toggleChartLine('real')">
+                                    <i class="fas fa-circle me-1" style="color: #38ef7d;"></i>Real
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger active-line" data-line="fake" onclick="toggleChartLine('fake')">
+                                    <i class="fas fa-circle me-1" style="color: #f45c43;"></i>Fake
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary active-line" data-line="total" onclick="toggleChartLine('total')">
+                                    <i class="fas fa-circle me-1" style="color: #667eea;"></i>Total
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="trendChart"></canvas>
+                        <div class="chart-legend-inline">
+                            <span class="legend-item"><span class="legend-dot real-dot"></span> Real Medicines</span>
+                            <span class="legend-item"><span class="legend-dot fake-dot"></span> Fake Medicines</span>
+                            <span class="legend-item"><span class="legend-dot total-dot"></span> Total Scans</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Distribution Pie Chart (Right) -->
+            <div class="col-lg-4">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-pie me-2"></i>Distribution</h3>
+                    </div>
+                    <div class="chart-body">
+                        {% if total_scans > 0 %}
+                        <div class="donut-chart">
+                            <svg viewBox="0 0 100 100">
+                                <circle class="donut-ring" cx="50" cy="50" r="40"></circle>
+                                <circle class="donut-segment real" cx="50" cy="50" r="40"
+                                    stroke-dasharray="{{ (real_count / total_scans * 100) * 2.5 }} 250"
+                                    stroke-dashoffset="62.5"></circle>
+                                <circle class="donut-segment fake" cx="50" cy="50" r="40"
+                                    stroke-dasharray="{{ (fake_count / total_scans * 100) * 2.5 }} 250"
+                                    stroke-dashoffset="{{ 62.5 - (real_count / total_scans * 100) * 2.5 }}"></circle>
+                            </svg>
+                            <div class="donut-center">
+                                <span class="donut-value">{{ total_scans }}</span>
+                                <span class="donut-label">Total Scans</span>
+                            </div>
+                        </div>
+                        <div class="donut-legend">
+                            <div class="legend-row">
+                                <span class="legend-color real"></span>
+                                <span>Real: {{ real_count }} ({{ (real_count / total_scans * 100) | int }}%)</span>
+                            </div>
+                            <div class="legend-row">
+                                <span class="legend-color fake"></span>
+                                <span>Fake: {{ fake_count }} ({{ (fake_count / total_scans * 100) | int }}%)</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="empty-chart">
+                            <i class="fas fa-chart-pie"></i>
+                            <p>No distribution data</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Detections Table with Filters -->
+        <div class="row">
+            <div class="col-12">
+                <div class="table-card">
+                    <div class="table-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <h3><i class="fas fa-history me-2"></i>Detection Results</h3>
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" onclick="filterDetections('all')">
+                                    <i class="fas fa-list me-1"></i>All ({{ detections|length }})
+                                </button>
+                                <button class="filter-btn" onclick="filterDetections('real')">
+                                    <i class="fas fa-check-circle me-1"></i>Real
+                                </button>
+                                <button class="filter-btn" onclick="filterDetections('fake')">
+                                    <i class="fas fa-times-circle me-1"></i>Fake
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Result</th>
+                                    <th>Medicine</th>
+                                    <th>Expiry</th>
+                                    <th>CNN Conf.</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detectionsTable">
+                                {% if detections %}
+                                {% for detection in detections %}
+                                <tr class="detection-row" data-result="{{ detection.result.lower() }}">
+                                    <td>
+                                        <div class="datetime">
+                                            <span class="date">{{ detection.date.split(' ')[0] }}</span>
+                                            <span class="time">{{ detection.date.split(' ')[1] }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge-result {% if 'REAL' in detection.result|upper or 'GENUINE' in detection.result|upper %}real{% else %}fake{% endif %}">
+                                            <i class="fas {% if 'REAL' in detection.result|upper or 'GENUINE' in detection.result|upper %}fa-check{% else %}fa-times{% endif %} me-1"></i>
+                                            {% if 'FAKE' in detection.result|upper %}FAKE{% else %}{{ detection.result }}{% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="medicine-name">
+                                        {{ detection.medicine_name or '-' }}
+                                    </td>
+                                    <td class="expiry-date">
+                                        {% if detection.expiry_date and detection.expiry_date not in ['-', 'Expiry Not Detected', 'Expiry Date Not Clearly Visible', 'N/A'] %}
+                                            {{ detection.expiry_date }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td class="conf-value">
+                                        {% if detection.confidence is not none and detection.confidence > 0 %}
+                                            {{ "%.0f"|format(detection.confidence) }}%
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="/uploads/{{ detection.image }}" target="_blank" class="btn btn-sm btn-view" title="View image">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="empty-state">
+                                            <i class="fas fa-inbox"></i>
+                                            <h5>No detections yet</h5>
+                                            <p>Start scanning medicines to see results here.</p>
+                                            <a href="/detection" class="btn btn-primary">Start Scanning</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .chart-legend-inline {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .legend-dot {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+        vertical-align: middle;
+    }
+
+    .legend-dot.real-dot {
+        background: #38ef7d;
+        box-shadow: 0 0 10px rgba(56, 239, 125, 0.4);
+    }
+
+    .legend-dot.fake-dot {
+        background: #f45c43;
+        box-shadow: 0 0 10px rgba(244, 92, 67, 0.4);
+    }
+
+    .legend-dot.total-dot {
+        background: #667eea;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.4);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.95rem;
+        color: #333;
+        font-weight: 500;
+    }
+
+    #trendChart {
+        position: relative;
+        height: 300px !important;
+    }
+
+    .period-stat {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    }
+
+    .period-header {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.9;
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+
+    .period-numbers {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .period-real, .period-fake, .period-total {
+        text-align: center;
+    }
+
+    .period-real, .period-fake {
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .period-real span, .period-fake span {
+        display: block;
+        font-size: 0.75rem;
+        opacity: 0.85;
+    }
+
+    .period-total {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .filter-btn {
+        padding: 8px 16px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        color: #333;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .filter-btn:hover {
+        border-color: #667eea;
+        color: #667eea;
+    }
+
+    .filter-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+    }
+
+    .detection-row.hidden {
+        display: none;
+    }
+
+    .expiry-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .expiry-badge.expired {
+        background-color: #fee5e5;
+        color: #c00;
+    }
+
+    .expiry-badge.expiring {
+        background-color: #ffeaa7;
+        color: #d63031;
+    }
+
+    .expiry-badge.valid {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status-label {
+        display: block;
+        font-size: 0.75rem;
+        opacity: 0.8;
+        margin-top: 2px;
+    }
+
+    .empty-chart {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 250px;
+        color: #999;
+    }
+
+    .empty-chart i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .medicine-name {
+        font-weight: 500;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .batch-number, .expiry-date {
+        font-family: monospace;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .chart-bars {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 8rem;
+        height: 250px;
+        padding: 2rem 0;
+    }
+
+    .bar-group {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .bar {
+        width: 60px;
+        border-radius: 8px 8px 0 0;
+        margin: 0 auto 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .bar.real {
+        background: linear-gradient(180deg, #38ef7d 0%, #11998e 100%);
+    }
+
+    .bar.fake {
+        background: linear-gradient(180deg, #f45c43 0%, #eb3349 100%);
+    }
+
+    .bar:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+
+    /* Donut Chart Styles */
+    .donut-chart {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        margin: 0 auto 2rem;
+    }
+
+    .donut-chart svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .donut-ring {
+        fill: none;
+        stroke: #f0f0f0;
+        stroke-width: 8;
+    }
+
+    .donut-segment {
+        fill: none;
+        stroke-width: 8;
+        stroke-linecap: round;
+        transition: all 0.3s ease;
+    }
+
+    .donut-segment.real {
+        stroke: #38ef7d;
+    }
+
+    .donut-segment.fake {
+        stroke: #f45c43;
+    }
+
+    .donut-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+
+    .donut-value {
+        display: block;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .donut-label {
+        display: block;
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+
+    .donut-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .legend-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.95rem;
+        color: #333;
+    }
+
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+
+    .legend-color.real {
+        background: #38ef7d;
+    }
+
+    .legend-color.fake {
+        background: #f45c43;
+    }
+
+    /* Detection Result Badge Styling */
+    .badge-result {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.6rem 1.2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1rem;
+        white-space: nowrap;
+        border: none;
+        gap: 0.5rem;
+    }
+
+    .badge-result.real {
+        background-color: #d1fae5;
+        color: #10b981;
+    }
+
+    .badge-result.real i {
+        color: #10b981;
+        font-size: 1.1rem;
+    }
+
+    .badge-result.fake {
+        background-color: #fee2e2;
+        color: #ef4444;
+    }
+
+    .badge-result.fake i {
+        color: #ef4444;
+        font-size: 1.1rem;
+    }
+
+    /* Dashboard Alignment Fixes */
+    .chart-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .chart-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* Donut Chart Centering */
+    .chart-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+
+    /* Page Header Alignment */
+    .page-header {
+        padding: 2rem 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    /* Dashboard Section */
+    .dashboard-section {
+        padding: 2rem 0;
+    }
+
+    /* Table Header Alignment */
+    .table-header {
+        padding: 1.5rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .table-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    /* Responsive Alignment */
+    @media (max-width: 992px) {
+        .col-lg-6.mx-auto {
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .btn-group {
+            width: 100%;
+            margin-top: 1rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .chart-bars {
+            gap: 4rem;
+        }
+
+        .period-numbers {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .page-header {
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .stat-card {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .filter-buttons {
+            justify-content: center !important;
+            width: 100%;
+        }
+    }
+
+    /* Chart Actions Styling */
+    .chart-actions {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .action-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .action-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #666;
+        white-space: nowrap;
+        margin-right: 0.5rem;
+    }
+
+    .active-line.btn {
+        transition: all 0.2s ease;
+    }
+
+    .active-line.btn.disabled-line {
+        opacity: 0.5;
+        background-color: #f5f5f5;
+    }
+
+    @media (max-width: 768px) {
+        .chart-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .action-group {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .col-lg-8,
+        .col-lg-4 {
+            flex-basis: 100%;
+            max-width: 100%;
+        }
+    }
+
+</style>
+
+<script>
+    // Sample data - replace with dynamic data from server
+    const chartData = {
+        week: {
+            labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            real: [{{ week_real }}, {{ week_real }}, {{ week_real }}, {{ week_real }}, {{ week_real }}, {{ week_real }}, {{ week_real }}],
+            fake: [{{ week_fake }}, {{ week_fake }}, {{ week_fake }}, {{ week_fake }}, {{ week_fake }}, {{ week_fake }}, {{ week_fake }}],
+            total: [{{ week_total }}, {{ week_total }}, {{ week_total }}, {{ week_total }}, {{ week_total }}, {{ week_total }}, {{ week_total }}]
+        },
+        month: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            real: [Math.floor({{ month_real }} / 4), Math.floor({{ month_real }} / 4), Math.floor({{ month_real }} / 4), {{ month_real }} - Math.floor({{ month_real }} / 4) * 3],
+            fake: [Math.floor({{ month_fake }} / 4), Math.floor({{ month_fake }} / 4), Math.floor({{ month_fake }} / 4), {{ month_fake }} - Math.floor({{ month_fake }} / 4) * 3],
+            total: [Math.floor({{ month_total }} / 4), Math.floor({{ month_total }} / 4), Math.floor({{ month_total }} / 4), {{ month_total }} - Math.floor({{ month_total }} / 4) * 3]
+        },
+        year: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            real: [Math.floor({{ year_real }} / 12), Math.floor({{ year_real }} / 12), Math.floor({{ year_real }} / 12), Math.floor({{ year_real }} / 12), Math.floor({{ year_real }} / 12), Math.floor({{ year_real }} / 12), Math.floor({{ year_real }} / 12), Math.floor({{ year_real }} / 12), Math.floor({{ year_real }} / 12), Math.floor({{ year_real }} / 12), Math.floor({{ year_real }} / 12), {{ year_real }} - Math.floor({{ year_real }} / 12) * 11],
+            fake: [Math.floor({{ year_fake }} / 12), Math.floor({{ year_fake }} / 12), Math.floor({{ year_fake }} / 12), Math.floor({{ year_fake }} / 12), Math.floor({{ year_fake }} / 12), Math.floor({{ year_fake }} / 12), Math.floor({{ year_fake }} / 12), Math.floor({{ year_fake }} / 12), Math.floor({{ year_fake }} / 12), Math.floor({{ year_fake }} / 12), Math.floor({{ year_fake }} / 12), {{ year_fake }} - Math.floor({{ year_fake }} / 12) * 11],
+            total: [Math.floor({{ year_total }} / 12), Math.floor({{ year_total }} / 12), Math.floor({{ year_total }} / 12), Math.floor({{ year_total }} / 12), Math.floor({{ year_total }} / 12), Math.floor({{ year_total }} / 12), Math.floor({{ year_total }} / 12), Math.floor({{ year_total }} / 12), Math.floor({{ year_total }} / 12), Math.floor({{ year_total }} / 12), Math.floor({{ year_total }} / 12), {{ year_total }} - Math.floor({{ year_total }} / 12) * 11]
+        }
+    };
+
+    let trendChart = null;
+    let activeLines = {
+        real: true,
+        fake: true,
+        total: true
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the line chart
+        initializeLineChart('year');
+    });
+
+    function initializeLineChart(period) {
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        const data = chartData[period];
+
+        if (trendChart) {
+            trendChart.destroy();
+        }
+
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    {
+                        label: 'Real Medicines',
+                        data: data.real,
+                        borderColor: '#38ef7d',
+                        backgroundColor: 'rgba(56, 239, 125, 0.1)',
+                        borderWidth: 3,
+                        borderCapStyle: 'round',
+                        borderJoinStyle: 'round',
+                        pointRadius: 5,
+                        pointBackgroundColor: '#38ef7d',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 7,
+                        fill: true,
+                        tension: 0.4,
+                        shadowColor: 'rgba(56, 239, 125, 0.3)',
+                        shadowBlur: 10
+                    },
+                    {
+                        label: 'Fake Medicines',
+                        data: data.fake,
+                        borderColor: '#f45c43',
+                        backgroundColor: 'rgba(244, 92, 67, 0.1)',
+                        borderWidth: 3,
+                        borderCapStyle: 'round',
+                        borderJoinStyle: 'round',
+                        pointRadius: 5,
+                        pointBackgroundColor: '#f45c43',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 7,
+                        fill: true,
+                        tension: 0.4,
+                        shadowColor: 'rgba(244, 92, 67, 0.3)',
+                        shadowBlur: 10
+                    },
+                    {
+                        label: 'Total Scans',
+                        data: data.total,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        borderCapStyle: 'round',
+                        borderJoinStyle: 'round',
+                        pointRadius: 5,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 7,
+                        fill: true,
+                        tension: 0.4,
+                        shadowColor: 'rgba(102, 126, 234, 0.3)',
+                        shadowBlur: 10
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#667eea',
+                        borderWidth: 1,
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        displayColors: true,
+                        cornerRadius: 8,
+                        caretPadding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + ' scans';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)',
+                            drawBorder: false,
+                            drawTicks: false
+                        },
+                        ticks: {
+                            color: '#999',
+                            font: { size: 12 },
+                            padding: 10
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#999',
+                            font: { size: 12 }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateLineChart(period) {
+        // Update active button
+        const buttons = document.querySelectorAll('.chart-header .chart-actions .action-group:first-child button');
+        buttons.forEach(btn => btn.classList.remove('btn-primary'));
+        buttons.forEach(btn => btn.classList.add('btn-outline-secondary'));
+
+        event.target.classList.remove('btn-outline-secondary');
+        event.target.classList.add('btn-primary');
+
+        // Reinitialize chart with new data
+        initializeLineChart(period);
+    }
+
+    function toggleChartLine(lineType) {
+        // Toggle the line visibility
+        activeLines[lineType] = !activeLines[lineType];
+
+        // Update button styling
+        const button = document.querySelector(`.active-line[data-line="${lineType}"]`);
+        if (activeLines[lineType]) {
+            button.classList.remove('disabled-line');
+        } else {
+            button.classList.add('disabled-line');
+        }
+
+        // Update chart to show/hide the line
+        if (trendChart) {
+            // Find the dataset index
+            let datasetIndex = 0;
+            if (lineType === 'fake') datasetIndex = 1;
+            if (lineType === 'total') datasetIndex = 2;
+
+            // Toggle visibility
+            trendChart.getDatasetMeta(datasetIndex).hidden = !activeLines[lineType];
+            trendChart.update();
+        }
+    }
+
+    function filterDetections(type) {
+        const rows = document.querySelectorAll('.detection-row');
+        const buttons = document.querySelectorAll('.filter-btn');
+
+        // Update active button
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.closest('.filter-btn').classList.add('active');
+
+        // Filter rows
+        rows.forEach(row => {
+            const result = row.getAttribute('data-result').toLowerCase();
+            if (type === 'all') {
+                row.classList.remove('hidden');
+            } else if (type === 'real') {
+                if (result.includes('real') || result.includes('genuine')) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            } else if (type === 'fake') {
+                if (result.includes('fake')) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            }
+        });
+    }
+</script>
+
+{% endblock %}

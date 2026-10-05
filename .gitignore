@@ -1,0 +1,26 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+.vscode/
+
+# Large datasets
+*.csv
+*.zip
+
+# ML models
+*.h5
+*.keras
+*.pt
+
+# Python/ML binaries
+*.pyd
+*.dll
+*.lib
+
+# Generated/debug files
+*.log
